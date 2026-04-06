@@ -230,6 +230,25 @@ pnpm db:generate      # Generate DB migration
 pnpm db:migrate       # Apply migrations
 ```
 
+### Local dev with Docker Postgres
+
+By default, `pnpm dev` spins up an embedded PostgreSQL instance. If you prefer to run Postgres in a Docker container (persistent volume, isolated from your host, easy to reset), use the Docker-backed dev commands instead:
+
+```bash
+pnpm dev:docker          # Start Postgres in Docker + Paperclip in the background
+pnpm dev:docker:down     # Stop both Paperclip and the Docker Postgres
+```
+
+`dev:docker` starts a PostgreSQL 17 container on port **5433** (to avoid conflicts with any local Postgres on 5432), then launches the Paperclip dev server in the background. Database data is persisted in a Docker volume (`pgdata`) so it survives container restarts.
+
+To wipe the database and start fresh:
+
+```bash
+docker compose -f docker-compose.dev.yml down -v   # removes the pgdata volume
+```
+
+> **Requirements:** Docker (or Docker Desktop) must be installed and running.
+
 See [doc/DEVELOPING.md](doc/DEVELOPING.md) for the full development guide.
 
 <br/>
