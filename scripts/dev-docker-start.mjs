@@ -16,11 +16,11 @@ mkdirSync(logDir, { recursive: true });
 const logFile = path.join(logDir, "dev-docker.log");
 const out = openSync(logFile, "w");
 
-const isWin = process.platform === "win32";
-const child = spawn(isWin ? "pnpm.cmd" : "pnpm", ["dev"], {
+const child = spawn("pnpm dev", {
   cwd: repoRoot,
   detached: true,
   stdio: ["ignore", out, out],
+  shell: true,
 });
 
 child.unref();
