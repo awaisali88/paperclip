@@ -239,7 +239,7 @@ pnpm dev:docker          # Start Postgres in Docker + Paperclip in the backgroun
 pnpm dev:docker:down     # Stop both Paperclip and the Docker Postgres
 ```
 
-`dev:docker` starts a PostgreSQL 17 container on port **5433** (to avoid conflicts with any local Postgres on 5432), then launches the Paperclip dev server in the background. Database data is persisted in a Docker volume (`pgdata`) so it survives container restarts.
+`dev:docker` starts a PostgreSQL 17 container on port **5433** (to avoid conflicts with any local Postgres on 5432), then launches the Paperclip dev server in the background. Your terminal is freed immediately — logs are written to `.paperclip/dev-docker.log`. Database data is persisted in a Docker volume (`pgdata`) so it survives container restarts.
 
 To wipe the database and start fresh:
 
