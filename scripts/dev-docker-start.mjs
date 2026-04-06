@@ -2,10 +2,11 @@
 /**
  * Launches `pnpm dev` as a background process so the terminal is freed
  * immediately. Logs go to .paperclip/dev-docker.log.
+ * Saves the launcher PID to .paperclip/dev-docker.pid for reliable cleanup.
  * Stop with: pnpm dev:docker:down
  */
-import { execSync, spawn } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,13 +15,10 @@ const logDir = path.join(repoRoot, ".paperclip");
 mkdirSync(logDir, { recursive: true });
 
 const logFile = path.join(logDir, "dev-docker.log");
+const pidFile = path.join(logDir, "dev-docker.pid");
 
 if (process.platform === "win32") {
-  // Write a .cmd launcher that sets up the correct working directory and
-  // redirects output, then use PowerShell Start-Process to run it hidden.
-  // Read .env from repo root and inject variables into the launcher so the
-  // hidden process has the same environment as a normal terminal session.
-  const { readFileSync } = await import("node:fs");
+  // Read .env from repo root and inject variables into the launcher .cmd
   let envLines = [];
   const envFile = path.join(repoRoot, ".env");
   try {
@@ -42,12 +40,17 @@ if (process.platform === "win32") {
     "",
   ].join("\r\n"));
 
-  execSync(
-    `powershell.exe -NoProfile -Command "Start-Process -FilePath '${launcher}' -WindowStyle Hidden"`,
-    { stdio: "ignore" },
-  );
+  // Start-Process -PassThru returns the process object so we can capture its PID
+  const pid = execSync(
+    `powershell.exe -NoProfile -Command "(Start-Process -FilePath '${launcher}' -WindowStyle Hidden -PassThru).Id"`,
+    { encoding: "utf8" },
+  ).trim();
+
+  writeFileSync(pidFile, pid);
+  console.log(`Paperclip dev server started in background (pid ${pid}).`);
 } else {
   const { openSync } = await import("node:fs");
+  const { spawn } = await import("node:child_process");
   const out = openSync(logFile, "w");
   const child = spawn("pnpm dev", {
     cwd: repoRoot,
@@ -56,8 +59,9 @@ if (process.platform === "win32") {
     shell: true,
   });
   child.unref();
+  writeFileSync(pidFile, String(child.pid));
+  console.log(`Paperclip dev server started in background (pid ${child.pid}).`);
 }
 
-console.log("Paperclip dev server started in background.");
 console.log(`Logs: ${logFile}`);
 console.log("Stop:  pnpm dev:docker:down");
